@@ -1,0 +1,76 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.2'
+	id 'io.spring.dependency-management' version '1.1.4'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
+	id 'io.freefair.aspectj.post-compile-weaving' version '8.2.2'
+}
+
+wrapper {
+	gradleVersion = "8.2.1"
+} 
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('springCloudVersion', "2023.0.0")
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	implementation 'org.springframework.cloud:spring-cloud-function-context'
+	implementation 'org.springframework.cloud:spring-cloud-function-adapter-aws:3.2.5'
+	aspect 'software.amazon.lambda:powertools-logging:1.18.0'
+	aspect 'software.amazon.lambda:powertools-tracing:1.18.0'
+	aspect 'software.amazon.lambda:powertools-metrics:1.18.0'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    modules {
+        module('org.springframework.boot:spring-boot-starter-logging') {
+            replacedBy 'org.springframework.boot:spring-boot-starter-log4j2'
+        }
+    }
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+assemble.dependsOn = [shadowJar]
+
+import com.github.jengelman.gradle.plugins.shadow.transformers.*
+
+shadowJar {
+    manifest {
+        attributes "Main-Class" : "com.example.demo.DemoApplication"
+    }
+	dependencies {
+		exclude(
+			dependency("org.springframework.cloud:spring-cloud-function-web:3.2.5"))
+	}
+	// Required for Spring
+	mergeServiceFiles()
+	append 'META-INF/spring.handlers'
+	append 'META-INF/spring.schemas'
+	append 'META-INF/spring.tooling'
+	transform(PropertiesFileTransformer) {
+		paths = ['META-INF/spring.factories']
+		mergeStrategy = "append"
+	}
+}
