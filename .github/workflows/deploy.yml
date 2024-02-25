@@ -22,6 +22,10 @@ jobs:
       uses: gradle/actions/setup-gradle@417ae3ccd767c252f5661f1ace9f835f9654f2b5 # v3.1.0
     - name: Build with Gradle Wrapper
       run: ./gradlew build
+    - name: Add lambda version description file to jar file
+      run: |
+        git log  -1 --pretty=oneline --no-decorate > version_description.txt
+        jar uf build/libs/demo-0.0.1-SNAPSHOT-all.jar version_description.txt
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
